@@ -30,6 +30,10 @@ p {
   text-align: center;
 }
 
+.btn {
+  margin: 30px auto;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;

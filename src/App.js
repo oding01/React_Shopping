@@ -1,23 +1,59 @@
-import { createContext, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import './App.css';
 import { Navbar, Container, Nav } from 'react-bootstrap';
 import data from './data';
-import { Routes, Route, Link, useNavigate, Outlet } from 'react-router-dom';
-import Details from './pages/Details';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import Cart from './pages/Cart';
+import { useQuery } from 'react-query';
 
-export let Context1 = createContext();
+const Details = lazy(() => import('./pages/Details.js'));
+const Cart = lazy(() => import('./pages/Cart.js'));
 
 function App() {
   let [shoes, setShoes] = useState(data);
   let [btnCount, setBtnCount] = useState(0);
   let nav = useNavigate();
 
-  let [재고] = useState([10, 11, 12]);
+  useEffect(() => {
+    if (!localStorage.key('watched')) {
+      localStorage.setItem('watched', JSON.stringify([]));
+    }
+  }, []);
+
+  let result = useQuery(
+    'userName',
+    () =>
+      axios.get('https://codingapple1.github.io/userdata.json').then((a) => {
+        return a.data;
+      }),
+    { staleTime: 2000 }
+  );
+
+  //result.isLoading 로딩중일때
+  //result.data 성공
+  //result.error 실패
+
+  // let [count, setCount] = useState(0);
+  // let [age, setAge] = useState(20);
+
+  // useEffect(() => {
+  //   if (count !== 0 && count < 3) {
+  //     setAge(age + 1);
+  //   }
+  // }, [count]);
+
+  // let countUp = () => {
+  //   setCount(count + 1);
+  // };
 
   return (
     <div className="App">
+      {/* <div>
+        <div>
+          안녕하십니까 전 {age} 카운트 {count}
+        </div>
+        <button onClick={countUp}>누르면 한살 먹기</button>
+      </div> */}
       <Navbar bg="light" data-bs-theme="light">
         <Container>
           <Navbar.Brand
@@ -39,73 +75,74 @@ function App() {
               Cart
             </Nav.Link>
           </Nav>
+          <Nav className="ms-auto">
+            {result.isLoading && '로딩중'}
+            {result.error && '실패'}
+            {result.data && '반가워요, ' + result.data.name}
+          </Nav>
         </Container>
       </Navbar>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <>
-              <div className="main-bg"></div>
-              <div className="container">
-                <div className="row">
-                  {shoes.map((a, i) => {
-                    return <Card shoes={shoes[i]} i={i}></Card>;
-                  })}
+      <Suspense fallback={<div>로딩중...</div>}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <>
+                <div className="main-bg"></div>
+                <div className="container">
+                  <div className="row">
+                    {shoes.map((a, i) => {
+                      return <Card shoes={shoes[i]} i={i} key={i}></Card>;
+                    })}
+                  </div>
                 </div>
-              </div>
-              <button
-                onClick={() => {
-                  setBtnCount(++btnCount);
-                  switch (btnCount) {
-                    case 1:
-                      axios
-                        .get('https://codingapple1.github.io/shop/data2.json')
-                        .then((result) => {
-                          // setShoes([...shoes, ...result.data]); 스프레드 연산자 사용 ({}, {})
-                          setShoes(shoes.concat(result.data)); //concat 함수 사용
-                        })
-                        .catch(() => {
-                          console.log('실패');
-                        });
-                      break;
-                    case 2:
-                      axios
-                        .get('https://codingapple1.github.io/shop/data3.json')
-                        .then((result) => {
-                          // setShoes([...shoes, ...result.data]); 스프레드 연산자 사용 ({}, {})
-                          setShoes(shoes.concat(result.data)); //concat 함수 사용
-                        })
-                        .catch(() => {
-                          console.log('실패');
-                        });
-                      break;
-                    default:
-                      return (
-                        <p className="alert alert-warning">더 이상 없어요~</p>
-                      );
-                  }
-                }}
-              >
-                더보기
-              </button>
-            </>
-          }
-        />
-        <Route
-          path="/details/:id"
-          element={
-            <Context1.Provider value={{ 재고, shoes }}>
-              <Details shoes={shoes} />
-            </Context1.Provider>
-          }
-        />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/about" element={<div>About</div>}>
-          <Route path="location" />
-        </Route>
-        <Route path="*" element={<div>404 페이지</div>} />
-      </Routes>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setBtnCount(++btnCount);
+                    switch (btnCount) {
+                      case 1:
+                        axios
+                          .get('https://codingapple1.github.io/shop/data2.json')
+                          .then((result) => {
+                            // setShoes([...shoes, ...result.data]); 스프레드 연산자 사용 ({}, {})
+                            setShoes(shoes.concat(result.data)); //concat 함수 사용
+                          })
+                          .catch(() => {
+                            console.log('실패');
+                          });
+                        break;
+                      case 2:
+                        axios
+                          .get('https://codingapple1.github.io/shop/data3.json')
+                          .then((result) => {
+                            // setShoes([...shoes, ...result.data]); 스프레드 연산자 사용 ({}, {})
+                            setShoes(shoes.concat(result.data)); //concat 함수 사용
+                          })
+                          .catch(() => {
+                            console.log('실패');
+                          });
+                        break;
+                      default:
+                        return (
+                          <p className="alert alert-warning">더 이상 없어요~</p>
+                        );
+                    }
+                  }}
+                >
+                  더보기
+                </button>
+              </>
+            }
+          />
+          <Route path="/details/:id" element={<Details shoes={shoes} />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/about" element={<div>About</div>}>
+            <Route path="location" />
+          </Route>
+          <Route path="*" element={<div>404 페이지</div>} />
+        </Routes>
+      </Suspense>
     </div>
   );
 }

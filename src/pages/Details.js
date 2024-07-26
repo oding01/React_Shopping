@@ -1,11 +1,13 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Nav } from 'react-bootstrap';
 import styled from 'styled-components';
 
-import { Context1 } from '../App';
 import { useDispatch, useSelector } from 'react-redux';
 import { addInCart } from '../store/cartSlice';
+import { useLike } from '../hooks/like';
+import axios from 'axios';
+import { useUserName } from '../hooks/name';
 
 // let YellowButton = styled.button`
 //   background: yellow;
@@ -62,6 +64,18 @@ const Details = (props) => {
     return e.id == id;
   });
 
+  useEffect(() => {
+    var storageItem = JSON.parse(localStorage.getItem('watched'));
+
+    if (!storageItem.includes(findShoes.id)) {
+      storageItem.push(findShoes.id);
+      localStorage.setItem('watched', JSON.stringify(storageItem));
+    }
+  }, []);
+
+  let { like, addLike } = useLike();
+  let userName = useUserName();
+
   return (
     <div className={`container transparent${trans}`}>
       {alert === true ? (
@@ -89,6 +103,11 @@ const Details = (props) => {
               setCount(e.target.value);
             }}
           />
+          {like}{' '}
+          <span style={{ cursor: 'pointer' }} onClick={addLike}>
+            ❤
+          </span>
+          {/* <p>{userName}</p> */}
           <h4 className="pt-5">{findShoes.title}</h4>
           <p>{findShoes.content}</p>
           <p>{findShoes.price}원</p>
